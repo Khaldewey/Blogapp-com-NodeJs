@@ -7,6 +7,8 @@ const admin = require("./routes/admin")
 const path = require('path')
 const session = require("express-session")
 const flash = require("connect-flash")
+require("./models/Postagem")
+const Postagem = mongoose.model("postagens")
 
 
 //Configurações 
@@ -52,6 +54,24 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 //Rotas 
 app.use('/admin', admin)
+
+app.get('/', (req, res) => {
+  Postagem.find().lean().populate("categoria").sort({ data: "desc" }).then((postagens) => {
+    res.render("index", { postagens: postagens })
+  }).catch((err) => {
+    req.flash("error_msg", "Houve um erro interno")
+    res.redirect("/404")
+  })
+
+})
+
+app.get("/404", (req, res) => {
+  res.send("Erro 404")
+})
+
+app.get('/posts', (req, res) => {
+  res.send("Lista Posts")
+})
 
 //Outros 
 // Express
