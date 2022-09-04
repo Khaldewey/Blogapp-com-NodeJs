@@ -11,7 +11,10 @@ require("./models/Postagem")
 const Postagem = mongoose.model("postagens")
 require("./models/Categoria")
 const Categoria = mongoose.model("categorias")
-
+const usuarios = require("./routes/usuario")
+const passport = require("passport")
+require("./config/auth")(passport)
+const db = require("./config/db")
 
 //Configurações 
 //Sessão 
@@ -20,12 +23,17 @@ app.use(session({
   resave: true,
   saveUninitialized: true
 }))
+
+app.use(passport.initialize())
+app.use(passport.session())
 app.use(flash())
 
 // Middlewares
 app.use((req, res, next) => {
   res.locals.success_msg = req.flash('success_msg')
   res.locals.error_msg = req.flash('error_msg')
+  res.locals.error = req.flash('error')
+  res.locals.user = req.user || null
   next()
 })
 
@@ -40,7 +48,7 @@ app.use(express.json())
 
 //Mongoose
 mongoose.Promise = global.Promise;
-mongoose.connect('mongodb://localhost:27017/blogapp', {
+mongoose.connect((db.mongoURI), {
 
   useNewUrlParser: true
 })
@@ -56,6 +64,7 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 //Rotas 
 app.use('/admin', admin)
+app.use("/usuarios", usuarios)
 
 app.get('/', (req, res) => {
   Postagem.find().lean().populate("categoria").sort({ data: "desc" }).then((postagens) => {
@@ -123,7 +132,8 @@ app.get('/posts', (req, res) => {
 
 //Outros 
 // Express
-app.listen(8089, () => {
+const PORT = process.env.PORT || 8089
+app.listen(PORT, () => {
   console.log("Servidor Ativo : localhost:8089")
 })
 
